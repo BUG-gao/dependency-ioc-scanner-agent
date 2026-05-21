@@ -37,7 +37,16 @@ npm run dev -- --ioc "axios 1.14.1" --config config/projects.yaml
 
 ## 配置需要检测的项目
 
-编辑 `config/projects.yaml`：
+CLI 支持全局安装后扫描任意项目。项目路径不需要在被扫描项目里配置，可以统一写到一个 YAML 文件里。
+
+推荐使用全局配置文件：
+
+```bash
+mkdir -p ~/.ioc-scan
+vim ~/.ioc-scan/projects.yaml
+```
+
+写入：
 
 ```yaml
 projects:
@@ -47,6 +56,19 @@ projects:
   - name: secware
     path: /Users/xxx/secware
 ```
+
+也可以把配置文件放在任意位置，执行时用 `--config` 指定：
+
+```bash
+ioc-scan --ioc "axios 1.14.1" --config /Users/xxx/security/projects.yaml
+```
+
+配置查找顺序：
+
+1. 命令行参数：`--config /path/to/projects.yaml`
+2. 环境变量：`IOC_SCAN_CONFIG=/path/to/projects.yaml`
+3. 当前执行目录：`./config/projects.yaml`
+4. 全局配置：`~/.ioc-scan/projects.yaml`
 
 字段说明：
 
@@ -80,19 +102,25 @@ projects:
 ### 扫描固定版本
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --config config/projects.yaml
+ioc-scan --ioc "axios 1.14.1"
 ```
 
 ### 扫描版本范围
 
 ```bash
-ioc-scan --ioc "axios >=1.14.0 <1.15.0" --config config/projects.yaml
+ioc-scan --ioc "axios >=1.14.0 <1.15.0"
 ```
 
 ### 输出 JSON
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --config config/projects.yaml --json
+ioc-scan --ioc "axios 1.14.1" --json
+```
+
+### 临时指定配置文件
+
+```bash
+ioc-scan --ioc "axios 1.14.1" --config /Users/xxx/security/projects.yaml
 ```
 
 ### 输出示例
@@ -149,7 +177,7 @@ axios 1.14.1
 然后执行：
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --config config/projects.yaml
+ioc-scan --ioc "axios 1.14.1"
 ```
 
 如果安全通知中包含范围版本，可以让 Agent 保留范围：
@@ -170,7 +198,7 @@ foo-lib >=2.0.0 <2.3.5
 再执行：
 
 ```bash
-ioc-scan --ioc "foo-lib >=2.0.0 <2.3.5" --config config/projects.yaml
+ioc-scan --ioc "foo-lib >=2.0.0 <2.3.5"
 ```
 
 ## openClaw Skill 安装
@@ -211,8 +239,7 @@ npm install git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
 import { runOpenClawSkill } from "dependency-ioc-scanner-agent";
 
 const output = await runOpenClawSkill({
-  ioc_text: "axios 1.14.1",
-  configPath: "config/projects.yaml"
+  ioc_text: "axios 1.14.1"
 });
 
 return output.report;
@@ -250,7 +277,7 @@ return output.report;
 要求：
 1. 先从安全通知里提炼依赖包 IOC，格式为“包名 版本或版本范围”。
 2. 调用 skill 时把提炼结果放到 ioc_text。
-3. 使用 config/projects.yaml 中配置的项目列表。
+3. 使用默认项目配置；如果没有传 configPath，则按 CLI 相同顺序查找配置。
 4. 返回扫描报告，不要省略发现风险的项目、文件、依赖版本和状态。
 
 安全通知：
@@ -262,7 +289,6 @@ axios 1.14.1 存在风险，请排查项目中是否引用该版本。
 ```text
 请使用 Dependency IOC Scanner Skill 扫描：
 ioc_text = "axios 1.14.1"
-configPath = "config/projects.yaml"
 
 请返回 Markdown 扫描报告。
 ```

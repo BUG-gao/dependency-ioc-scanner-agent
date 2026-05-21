@@ -6,6 +6,7 @@ import { scanProjects } from "./dependency-scanner.js";
 import { parseIoc } from "./ioc-parser.js";
 import { versionMatches } from "./version-matcher.js";
 import { buildMarkdownReport } from "./report-builder.js";
+import { loadConfig, resolveConfigPath } from "./config.js";
 
 describe("IOC parser", () => {
   it("parses exact versions and ranges", () => {
@@ -47,5 +48,18 @@ describe("dependency scanner", () => {
     expect(result.projects[0].matches[0].dependency.packageName).toBe("axios");
     expect(buildMarkdownReport(result)).toContain("状态：Potential Risk");
     expect(buildMarkdownReport(result)).toContain("未发现");
+  });
+});
+
+describe("config", () => {
+  it("resolves explicit config paths and loads projects", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "ioc-scan-config-"));
+    const configPath = path.join(root, "projects.yaml");
+    await writeFile(configPath, "projects:\n  - name: demo\n    path: /tmp/demo\n");
+
+    expect(await resolveConfigPath(configPath)).toBe(configPath);
+    await expect(loadConfig(await resolveConfigPath(configPath))).resolves.toEqual({
+      projects: [{ name: "demo", path: "/tmp/demo" }]
+    });
   });
 });

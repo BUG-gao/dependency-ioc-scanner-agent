@@ -1,4 +1,4 @@
-import { loadConfig } from "../core/config.js";
+import { loadConfig, resolveConfigPath } from "../core/config.js";
 import { scanProjects } from "../core/dependency-scanner.js";
 import { buildMarkdownReport } from "../core/report-builder.js";
 import type { ProjectConfig, ScanResult } from "../types.js";
@@ -16,7 +16,7 @@ export interface OpenClawSkillOutput {
 }
 
 export async function runOpenClawSkill(input: OpenClawSkillInput): Promise<OpenClawSkillOutput> {
-  const projects = input.projects ?? (await loadConfig(input.configPath ?? "config/projects.yaml")).projects;
+  const projects = input.projects ?? (await loadConfig(await resolveConfigPath(input.configPath))).projects;
   const result = await scanProjects(input.ioc_text, projects);
   return {
     result,

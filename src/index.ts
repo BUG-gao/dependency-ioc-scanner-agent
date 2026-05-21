@@ -1,4 +1,4 @@
-export { loadConfig } from "./core/config.js";
+export { getDefaultGlobalConfigPath, loadConfig, resolveConfigPath } from "./core/config.js";
 export { scanProjectDependencies, scanProjects } from "./core/dependency-scanner.js";
 export { parseIoc } from "./core/ioc-parser.js";
 export { buildMarkdownReport } from "./core/report-builder.js";
