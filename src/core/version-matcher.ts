@@ -49,7 +49,11 @@ export function versionMatches(iocConstraint: IocConstraint, dependencyVersion: 
 
 export function normalizeDependencyVersion(version: string): string {
   return stripVersionPrefix(version)
+    .replace(/^==\s*/, "")
     .replace(/^=\s*/, "")
+    .replace(/^~=\s*(\d+)\.(\d+)\.(\d+)$/, (_match, major: string, minor: string, patch: string) => {
+      return `>=${major}.${minor}.${patch} <${major}.${Number(minor) + 1}.0`;
+    })
     .replace(/^version\s+/i, "")
     .trim();
 }

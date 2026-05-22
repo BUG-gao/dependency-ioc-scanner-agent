@@ -10,7 +10,7 @@ export async function scanGoFile(filePath: string): Promise<DependencyRecord[]> 
 function scanGoMod(filePath: string, content: string): DependencyRecord[] {
   const records: DependencyRecord[] = [];
   const requireBlock = content.match(/require\s*\(([\s\S]*?)\)/m)?.[1] ?? "";
-  const singleRequires = [...content.matchAll(/^require\s+(\S+)\s+(\S+)/gm)].map((match) => [match[1], match[2]]);
+  const singleRequires = [...content.matchAll(/^require\s+([^\s(]+)\s+(\S+)/gm)].map((match) => [match[1], match[2]]);
   const blockRequires = [...requireBlock.matchAll(/^\s*(\S+)\s+(\S+)/gm)].map((match) => [match[1], match[2]]);
 
   for (const [name, version] of [...singleRequires, ...blockRequires]) {
