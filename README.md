@@ -423,9 +423,7 @@ IOCs网络指标：t.m-kosche.com https://t.m-kosche.com:443/api/public/otel/v1/
 仓库反标记：niagA oG eW ereH :duluH-iahS
 ```
 
-或者直接复制投毒信息抛给他
-
-![image-20260522170750151](/Users/gaopengfei/Library/Application Support/typora-user-images/image-20260522170750151.png)
+也可以直接复制完整投毒信息发给 openClaw，让它把整段消息作为 `notice_text` 调用 skill。
 
 如果要指定项目路径，可以发：
 
@@ -488,6 +486,110 @@ https://t.m-kosche.com:443/api/public/otel/v1/traces
 "preinstall" : "bun run index.js"
 "@antv/setup" : "github:antvis/G2#1916faa365f2788b6e193514872d51a242876569"
 niagA oG eW ereH :duluH-iahS
+```
+
+## 更新和卸载
+
+### 更新全局 CLI 到最新远端版本
+
+如果你是按 `git clone` + `npm link` 安装的 CLI：
+
+```bash
+cd dependency-ioc-scanner-agent
+git pull
+npm install
+npm run build
+npm link
+```
+
+确认更新后的命令可用：
+
+```bash
+ioc-scan --help
+```
+
+如果你忘了源码目录在哪里，可以重新拉一份再 link：
+
+```bash
+git clone https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
+cd dependency-ioc-scanner-agent
+npm install
+npm run build
+npm link
+```
+
+### 卸载全局 CLI
+
+在源码目录中执行：
+
+```bash
+cd dependency-ioc-scanner-agent
+npm unlink
+```
+
+如果命令仍然存在，可以执行：
+
+```bash
+npm unlink -g dependency-ioc-scanner-agent
+```
+
+检查是否卸载：
+
+```bash
+which ioc-scan
+```
+
+如果不再输出路径，说明 CLI 已卸载。
+
+项目配置文件不会自动删除。如果也要删除全局配置：
+
+```bash
+rm ~/.ioc-scan/projects.yaml
+```
+
+### 更新 openClaw Skill 依赖
+
+如果 openClaw 的 skill 工程是通过 GitHub 地址安装的：
+
+```bash
+cd 你的-openClaw-skill-项目
+npm install git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
+```
+
+如果 openClaw 的 skill 工程是通过本地 `npm link` 安装的：
+
+```bash
+cd dependency-ioc-scanner-agent
+git pull
+npm install
+npm run build
+npm link
+
+cd 你的-openClaw-skill-项目
+npm link dependency-ioc-scanner-agent
+```
+
+### 卸载 openClaw Skill 依赖
+
+如果是普通 npm 依赖：
+
+```bash
+cd 你的-openClaw-skill-项目
+npm uninstall dependency-ioc-scanner-agent
+```
+
+如果是 `npm link`：
+
+```bash
+cd 你的-openClaw-skill-项目
+npm unlink dependency-ioc-scanner-agent
+```
+
+如需同时移除全局 link：
+
+```bash
+cd dependency-ioc-scanner-agent
+npm unlink
 ```
 
 ## 开发和验证
