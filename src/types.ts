@@ -46,3 +46,49 @@ export interface ScanResult {
   riskCount: number;
   projects: ProjectScanResult[];
 }
+
+export type SupplyChainIndicatorKind =
+  | "domain"
+  | "url"
+  | "lifecycle-script"
+  | "github-dependency"
+  | "text"
+  | "repository-pattern";
+
+export interface SupplyChainIndicator {
+  kind: SupplyChainIndicatorKind;
+  value: string;
+  description?: string;
+}
+
+export interface SupplyChainMatch {
+  project: ProjectConfig;
+  filePath: string;
+  indicator: SupplyChainIndicator;
+  evidence: string;
+  status: "Potential Supply Chain Risk";
+}
+
+export interface ProjectSupplyChainScanResult {
+  project: ProjectConfig;
+  matches: SupplyChainMatch[];
+}
+
+export interface SupplyChainScanResult {
+  notice: string;
+  indicators: SupplyChainIndicator[];
+  projectCount: number;
+  riskCount: number;
+  projects: ProjectSupplyChainScanResult[];
+}
+
+export interface SecurityNoticeAnalysis {
+  dependencyIocs: string[];
+  supplyChainIndicators: SupplyChainIndicator[];
+}
+
+export interface AutoScanResult {
+  analysis: SecurityNoticeAnalysis;
+  dependencyResults: ScanResult[];
+  supplyChainResult?: SupplyChainScanResult;
+}

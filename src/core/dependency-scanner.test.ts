@@ -5,6 +5,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { runOpenClawSkill } from "../adapters/openclaw-skill-adapter.js";
+import { analyzeSecurityNotice } from "./security-notice-parser.js";
+import { scanSupplyChainIndicators } from "./supply-chain-scanner.js";
 import { scanGoFile } from "../scanners/go-scanner.js";
 import { scanJavaFile } from "../scanners/java-scanner.js";
 import { scanNpmFile } from "../scanners/npm-scanner.js";
@@ -248,6 +250,71 @@ describe("end-to-end project scan", () => {
   });
 });
 
+describe("supply chain IOC scan", () => {
+  const shaiHuludNotice = [
+    "又一起供应链投毒，大家请自查：",
+    "IOCs网络指标",
+    "恶意域名和URL： t.m-kosche.com https://t.m-kosche.com:443/api/public/otel/v1/traces",
+    "可疑的合法服务API调用：https://fulcio.sigstore.dev/api/v2/signingCert https://rekor.sigstore.dev/api/v1/log/entries",
+    "文件与代码指标",
+    "恶意npm生命周期脚本：\"preinstall\" : \"bun run index.js\"",
+    "恶意GitHub依赖：\"@antv/setup\" : \"github:antvis/G2#1916faa365f2788b6e193514872d51a242876569\"",
+    "行为指标",
+    "GitHub仓库特征：攻击者创建的仓库通常遵循 <单词>-<单词>-<3位数字> 的命名模式，例如 sayyadina-stillsuit-852。",
+    "仓库反标记：README中包含 niagA oG eW ereH :duluH-iahS。"
+  ].join("\n");
+
+  it("extracts supply chain indicators from a poisoning notice", () => {
+    const analysis = analyzeSecurityNotice(shaiHuludNotice);
+
+    expect(analysis.dependencyIocs).toEqual([]);
+    expect(analysis.supplyChainIndicators).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "domain", value: "t.m-kosche.com" }),
+      expect.objectContaining({ kind: "url", value: "https://t.m-kosche.com:443/api/public/otel/v1/traces" }),
+      expect.objectContaining({ kind: "lifecycle-script", value: "preinstall:bun run index.js" }),
+      expect.objectContaining({
+        kind: "github-dependency",
+        value: "@antv/setup:github:antvis/G2#1916faa365f2788b6e193514872d51a242876569"
+      }),
+      expect.objectContaining({ kind: "text", value: "niagA oG eW ereH :duluH-iahS" }),
+      expect.objectContaining({ kind: "repository-pattern", value: "[a-z]+-[a-z]+-[0-9]{3}" })
+    ]));
+  });
+
+  it("detects poisoning indicators in package files, node_modules, and text files", async () => {
+    const root = await tempDir("ioc-scan-supply-");
+    const nodeModule = path.join(root, "node_modules", "sayyadina-stillsuit-852");
+    await mkdir(nodeModule, { recursive: true });
+    await writeFile(path.join(root, "package.json"), JSON.stringify({
+      scripts: { preinstall: "bun run index.js" },
+      dependencies: {
+        "@antv/setup": "github:antvis/G2#1916faa365f2788b6e193514872d51a242876569"
+      }
+    }, null, 2));
+    await writeFile(path.join(root, "index.js"), "fetch('https://t.m-kosche.com:443/api/public/otel/v1/traces')\n");
+    await writeFile(path.join(root, "README.md"), "niagA oG eW ereH :duluH-iahS\n");
+    await writeFile(path.join(nodeModule, "package.json"), JSON.stringify({
+      name: "sayyadina-stillsuit-852",
+      version: "1.0.0"
+    }));
+
+    const analysis = analyzeSecurityNotice(shaiHuludNotice);
+    const result = await scanSupplyChainIndicators(shaiHuludNotice, analysis.supplyChainIndicators, [
+      { name: "goplus_web", path: root }
+    ]);
+    const evidences = result.projects[0].matches.map((match) => match.evidence);
+
+    expect(result.riskCount).toBeGreaterThanOrEqual(5);
+    expect(evidences).toEqual(expect.arrayContaining([
+      "\"preinstall\": \"bun run index.js\"",
+      "\"@antv/setup\": \"github:antvis/G2#1916faa365f2788b6e193514872d51a242876569\"",
+      "fetch('https://t.m-kosche.com:443/api/public/otel/v1/traces')",
+      "niagA oG eW ereH :duluH-iahS",
+      "\"name\": \"sayyadina-stillsuit-852\""
+    ]));
+  });
+});
+
 describe("config", () => {
   it("resolves explicit config paths and loads projects", async () => {
     const root = await tempDir("ioc-scan-config-");
@@ -299,6 +366,25 @@ describe("adapters", () => {
 
     expect(output.result.riskCount).toBe(1);
     expect(output.report).toContain("项目：skill-demo");
+  });
+
+  it("runs openClaw adapter in auto-analysis mode for supply chain poisoning notices", async () => {
+    const root = await tempDir("ioc-scan-skill-supply-");
+    await writeFile(path.join(root, "package.json"), JSON.stringify({
+      scripts: { preinstall: "bun run index.js" },
+      dependencies: {
+        "@antv/setup": "github:antvis/G2#1916faa365f2788b6e193514872d51a242876569"
+      }
+    }, null, 2));
+
+    const output = await runOpenClawSkill({
+      notice_text: "恶意npm生命周期脚本：\"preinstall\" : \"bun run index.js\"\n恶意GitHub依赖：\"@antv/setup\" : \"github:antvis/G2#1916faa365f2788b6e193514872d51a242876569\"",
+      projects: [{ name: "skill-supply-demo", path: root }]
+    });
+
+    expect(output.report).toContain("# Security Notice Auto Scan Result");
+    expect(output.report).toContain("提炼供应链 IOC：2");
+    expect(output.report).toContain("Potential Supply Chain Risk");
   });
 
   it("runs CLI with an explicit config path and returns markdown", async () => {
