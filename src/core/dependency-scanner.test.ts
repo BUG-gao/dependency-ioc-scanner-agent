@@ -12,6 +12,7 @@ import { scanJavaFile } from "../scanners/java-scanner.js";
 import { scanNpmFile } from "../scanners/npm-scanner.js";
 import { scanPythonFile } from "../scanners/python-scanner.js";
 import type { DependencyRecord } from "../types.js";
+import { parsePositionalIocs, resolveCliIocs } from "./cli-ioc-input.js";
 import { loadConfig, resolveConfigPath } from "./config.js";
 import { scanProjects } from "./dependency-scanner.js";
 import { parseIoc } from "./ioc-parser.js";
@@ -56,6 +57,31 @@ describe("IOC parser", () => {
   it("rejects empty IOC text and notices without a parseable version", () => {
     expect(() => parseIoc("")).toThrow("IOC text is required");
     expect(() => parseIoc("axios 存在风险")).toThrow("Could not parse version constraint");
+  });
+});
+
+describe("CLI IOC input", () => {
+  it("parses short positional IOC pairs", () => {
+    expect(parsePositionalIocs(["axios", "1.14.1", "axum", "0.8"])).toEqual([
+      "axios 1.14.1",
+      "axum 0.8"
+    ]);
+  });
+
+  it("combines repeated --ioc values and positional values", () => {
+    expect(resolveCliIocs(["axios 1.14.1", "requests 2.31.0"], ["axum", "0.8"])).toEqual([
+      "axios 1.14.1",
+      "requests 2.31.0",
+      "axum 0.8"
+    ]);
+  });
+
+  it("preserves comma-separated versions for the same package", () => {
+    expect(resolveCliIocs(["axios 1.14.1, 1.14.2"], [])).toEqual(["axios 1.14.1, 1.14.2"]);
+  });
+
+  it("splits comma-separated IOC list when each part contains package and version", () => {
+    expect(resolveCliIocs(["axios 1.14.1, axum 0.8"], [])).toEqual(["axios 1.14.1", "axum 0.8"]);
   });
 });
 
@@ -408,5 +434,37 @@ describe("adapters", () => {
     expect(stderr).toBe("");
     expect(stdout).toContain("发现风险：1");
     expect(stdout).toContain("项目：web");
+  });
+
+  it("runs CLI with short multi-IOC positional syntax", async () => {
+    const root = await tempDir("ioc-scan-cli-short-");
+    const project = path.join(root, "web");
+    const configPath = path.join(root, "projects.yaml");
+    await mkdir(project);
+    await writeFile(path.join(project, "package.json"), JSON.stringify({
+      dependencies: {
+        axios: "1.14.1",
+        axum: "0.8.0"
+      }
+    }));
+    await writeFile(configPath, `projects:\n  - name: web\n    path: ${project}\n`);
+
+    const { stdout, stderr } = await execFileAsync(process.execPath, [
+      "--import",
+      "tsx",
+      path.join(repoRoot, "src/adapters/cli-adapter.ts"),
+      "axios",
+      "1.14.1",
+      "axum",
+      "0.8",
+      "-c",
+      configPath
+    ], { cwd: repoRoot });
+
+    expect(stderr).toBe("");
+    expect(stdout).toContain("axios 1.14.1");
+    expect(stdout).toContain("发现：axios@1.14.1");
+    expect(stdout).toContain("axum 0.8");
+    expect(stdout).toContain("发现：axum@0.8.0");
   });
 });

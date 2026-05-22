@@ -2,6 +2,7 @@ export { getDefaultGlobalConfigPath, loadConfig, resolveConfigPath } from "./cor
 export { scanProjectDependencies, scanProjects } from "./core/dependency-scanner.js";
 export { parseIoc } from "./core/ioc-parser.js";
 export { buildAutoScanMarkdownReport, buildMarkdownReport, buildSupplyChainMarkdownReport } from "./core/report-builder.js";
+export { collectIocOption, parsePositionalIocs, resolveCliIocs } from "./core/cli-ioc-input.js";
 export { analyzeSecurityNotice } from "./core/security-notice-parser.js";
 export { scanSupplyChainIndicators } from "./core/supply-chain-scanner.js";
 export { matchDependency, versionMatches } from "./core/version-matcher.js";

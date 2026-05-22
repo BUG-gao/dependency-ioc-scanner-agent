@@ -4,7 +4,7 @@ Dependency IOC Scanner Agent 用来根据安全通知里的 IOC，扫描多个�
 
 它支持两种使用方式：
 
-- CLI：在终端里执行 `ioc-scan --ioc "axios 1.14.1"`
+- CLI：在终端里执行 `ioc-scan axios 1.14.1`
 - openClaw Skill：把 `ioc_text` 或整段 `notice_text` 作为输入交给 skill 调用
 
 核心扫描逻辑只在 `core/` 中实现，CLI 和 openClaw Skill 共用同一套 Core。
@@ -32,7 +32,7 @@ ioc-scan --help
 ```bash
 npm install
 npm run build
-npm run dev -- --ioc "axios 1.14.1" --config config/projects.yaml
+npm run dev -- axios 1.14.1 -c config/projects.yaml
 ```
 
 ## 配置需要检测的项目
@@ -60,7 +60,7 @@ projects:
 也可以把配置文件放在任意位置，执行时用 `--config` 指定：
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --config /Users/xxx/security/projects.yaml
+ioc-scan axios 1.14.1 -c /Users/xxx/security/projects.yaml
 ```
 
 配置查找顺序：
@@ -107,28 +107,52 @@ openClaw Skill 的供应链投毒扫描还会额外检查：
 
 ## CLI 使用
 
+推荐使用短命令：
+
+```bash
+ioc-scan <包名> <版本或范围> [<包名> <版本或范围>...]
+```
+
 ### 扫描固定版本
 
 ```bash
-ioc-scan --ioc "axios 1.14.1"
+ioc-scan axios 1.14.1
 ```
 
 ### 扫描版本范围
 
 ```bash
-ioc-scan --ioc "axios >=1.14.0 <1.15.0"
+ioc-scan axios ">=1.14.0 <1.15.0"
+```
+
+### 一次扫描多个 IOC
+
+```bash
+ioc-scan axios 1.14.1 axum 0.8 requests 2.31.0
+```
+
+也可以重复使用 `-i`：
+
+```bash
+ioc-scan -i "axios 1.14.1" -i "axum 0.8" -i "requests 2.31.0"
+```
+
+旧写法仍然兼容：
+
+```bash
+ioc-scan --ioc "axios 1.14.1"
 ```
 
 ### 输出 JSON
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --json
+ioc-scan axios 1.14.1 axum 0.8 -j
 ```
 
 ### 临时指定配置文件
 
 ```bash
-ioc-scan --ioc "axios 1.14.1" --config /Users/xxx/security/projects.yaml
+ioc-scan axios 1.14.1 -c /Users/xxx/security/projects.yaml
 ```
 
 ### 输出示例
@@ -185,7 +209,7 @@ axios 1.14.1
 然后执行：
 
 ```bash
-ioc-scan --ioc "axios 1.14.1"
+ioc-scan axios 1.14.1
 ```
 
 如果安全通知中包含范围版本，可以让 Agent 保留范围：
@@ -206,7 +230,7 @@ foo-lib >=2.0.0 <2.3.5
 再执行：
 
 ```bash
-ioc-scan --ioc "foo-lib >=2.0.0 <2.3.5"
+ioc-scan foo-lib ">=2.0.0 <2.3.5"
 ```
 
 ## openClaw Skill 安装
@@ -399,6 +423,10 @@ IOCs网络指标：t.m-kosche.com https://t.m-kosche.com:443/api/public/otel/v1/
 仓库反标记：niagA oG eW ereH :duluH-iahS
 ```
 
+或者直接复制投毒信息抛给他
+
+![image-20260522170750151](/Users/gaopengfei/Library/Application Support/typora-user-images/image-20260522170750151.png)
+
 如果要指定项目路径，可以发：
 
 ```text
@@ -426,6 +454,12 @@ axios 1.14.1
 
 ```text
 axios 1.14.1, 1.14.2
+```
+
+多个 IOC：
+
+```bash
+ioc-scan axios 1.14.1 axum 0.8 requests 2.31.0
 ```
 
 版本范围：
