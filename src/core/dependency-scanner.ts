@@ -6,6 +6,7 @@ import { scanGoFile } from "../scanners/go-scanner.js";
 import { scanJavaFile } from "../scanners/java-scanner.js";
 import { scanNpmFile } from "../scanners/npm-scanner.js";
 import { scanPythonFile } from "../scanners/python-scanner.js";
+import { scanRustFile } from "../scanners/rust-scanner.js";
 import type { DependencyRecord, ProjectConfig, ScanResult } from "../types.js";
 
 const SCAN_PATTERNS = [
@@ -19,7 +20,9 @@ const SCAN_PATTERNS = [
   "**/build.gradle",
   "**/requirements.txt",
   "**/pyproject.toml",
-  "**/Pipfile"
+  "**/Pipfile",
+  "**/Cargo.toml",
+  "**/Cargo.lock"
 ];
 
 const IGNORE_PATTERNS = ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/vendor/**"];
@@ -72,6 +75,9 @@ async function scanFile(filePath: string): Promise<DependencyRecord[]> {
   }
   if (/(requirements\.txt|pyproject\.toml|Pipfile)$/.test(filePath)) {
     return scanPythonFile(filePath);
+  }
+  if (/(Cargo\.toml|Cargo\.lock)$/.test(filePath)) {
+    return scanRustFile(filePath);
   }
   return [];
 }

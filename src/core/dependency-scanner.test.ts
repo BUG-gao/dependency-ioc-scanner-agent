@@ -11,6 +11,7 @@ import { scanGoFile } from "../scanners/go-scanner.js";
 import { scanJavaFile } from "../scanners/java-scanner.js";
 import { scanNpmFile } from "../scanners/npm-scanner.js";
 import { scanPythonFile } from "../scanners/python-scanner.js";
+import { scanRustFile } from "../scanners/rust-scanner.js";
 import type { DependencyRecord } from "../types.js";
 import { parsePositionalIocs, resolveCliIocs } from "./cli-ioc-input.js";
 import { loadConfig, resolveConfigPath } from "./config.js";
@@ -239,6 +240,37 @@ describe("python scanner", () => {
   });
 });
 
+describe("rust scanner", () => {
+  it("reads Cargo.toml and Cargo.lock dependencies", async () => {
+    const root = await tempDir("ioc-scan-rust-");
+    const cargoToml = path.join(root, "Cargo.toml");
+    const cargoLock = path.join(root, "Cargo.lock");
+    await writeFile(cargoToml, [
+      "[dependencies]",
+      "axum = { version = \"0.8\", features = [\"json\"] }",
+      "tokio = \"1\"",
+      "[dev-dependencies]",
+      "pretty_assertions = \"1.4\""
+    ].join("\n"));
+    await writeFile(cargoLock, [
+      "[[package]]",
+      "name = \"axum\"",
+      "version = \"0.8.8\"",
+      "",
+      "[[package]]",
+      "name = \"tokio\"",
+      "version = \"1.47.0\""
+    ].join("\n"));
+
+    expect(names(await scanRustFile(cargoToml))).toEqual([
+      "axum@0.8",
+      "pretty_assertions@1.4",
+      "tokio@1"
+    ]);
+    expect(names(await scanRustFile(cargoLock))).toEqual(["axum@0.8.8", "tokio@1.47.0"]);
+  });
+});
+
 describe("end-to-end project scan", () => {
   it("scans multiple projects, ignores generated directories, and builds markdown reports", async () => {
     const root = await tempDir("ioc-scan-e2e-");
@@ -273,6 +305,16 @@ describe("end-to-end project scan", () => {
 
     expect(result.riskCount).toBe(1);
     expect(result.projects[0].matches[0].dependency.version).toBe("==2.31.0");
+  });
+
+  it("matches Rust Cargo dependency constraints in project scans", async () => {
+    const root = await tempDir("ioc-scan-rust-e2e-");
+    await writeFile(path.join(root, "Cargo.toml"), "[dependencies]\naxum = { version = \"0.8\", features = [\"json\"] }\n");
+
+    const result = await scanProjects("axum 0.8.0", [{ name: "costr", path: root }]);
+
+    expect(result.riskCount).toBe(1);
+    expect(result.projects[0].matches[0].dependency.version).toBe("0.8");
   });
 });
 

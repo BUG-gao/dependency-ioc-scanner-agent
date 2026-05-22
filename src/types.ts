@@ -1,4 +1,4 @@
-export type Ecosystem = "npm" | "go" | "java" | "python";
+export type Ecosystem = "npm" | "go" | "java" | "python" | "rust";
 
 export interface ProjectConfig {
   name: string;

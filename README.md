@@ -88,6 +88,8 @@ ioc-scan axios 1.14.1 -c /Users/xxx/security/projects.yaml
 - `requirements.txt`
 - `pyproject.toml`
 - `Pipfile`
+- `Cargo.toml`
+- `Cargo.lock`
 
 openClaw Skill 的供应链投毒扫描还会额外检查：
 
