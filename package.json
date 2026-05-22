@@ -11,6 +11,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && chmod +x dist/adapters/cli-adapter.js",
     "dev": "tsx src/adapters/cli-adapter.ts",
+    "prepare": "npm run build",
+    "setup": "npm install && npm run build && npm link",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

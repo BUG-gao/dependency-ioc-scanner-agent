@@ -11,14 +11,26 @@ Dependency IOC Scanner Agent 用来根据安全通知里的 IOC，扫描多个�
 
 ## CLI 安装
 
-### 从 GitHub 本地安装
+### 一条命令全局安装
+
+不需要手动拉源码，直接从 GitHub 安装全局 CLI：
+
+```bash
+npm install -g git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
+```
+
+安装完成后，终端中会有 `ioc-scan` 命令。
+
+```bash
+ioc-scan --help
+```
+
+### 拉源码后一条命令安装
 
 ```bash
 git clone https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
 cd dependency-ioc-scanner-agent
-npm install
-npm run build
-npm link
+npm run setup
 ```
 
 安装完成后，终端中会有 `ioc-scan` 命令。
@@ -499,9 +511,7 @@ niagA oG eW ereH :duluH-iahS
 ```bash
 cd dependency-ioc-scanner-agent
 git pull
-npm install
-npm run build
-npm link
+npm run setup
 ```
 
 确认更新后的命令可用：
@@ -515,9 +525,13 @@ ioc-scan --help
 ```bash
 git clone https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
 cd dependency-ioc-scanner-agent
-npm install
-npm run build
-npm link
+npm run setup
+```
+
+如果你是用一条命令全局安装的 CLI，更新时重新执行：
+
+```bash
+npm install -g git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
 ```
 
 ### 卸载全局 CLI
