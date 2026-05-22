@@ -118,6 +118,8 @@ npm install git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
 
 ## openClaw Skill 使用
 
+### 代码调用
+
 扫描依赖版本 IOC：
 
 ```ts
@@ -160,6 +162,48 @@ const output = await runOpenClawSkill({
     }
   ]
 });
+```
+
+### 通过消息使用
+
+安装并配置 skill：
+
+```text
+请安装这个 openClaw skill：
+git+https://github.com/BUG-gao/dependency-ioc-scanner-agent.git
+
+然后创建配置文件 ~/.ioc-scan/projects.yaml：
+projects:
+  - name: goplus_web
+    path: /Users/xxx/goplus_web
+```
+
+扫描已知依赖 IOC：
+
+```text
+请使用 Dependency IOC Scanner Skill 扫描：
+ioc_text = "axios 1.14.1"
+
+使用 ~/.ioc-scan/projects.yaml 中配置的项目，返回 Markdown 报告。
+```
+
+扫描整段供应链投毒通知：
+
+```text
+请使用 Dependency IOC Scanner Skill 检查下面这条通知，判断项目是否中招。
+
+要求：
+1. 把整段通知作为 notice_text 调用 skill。
+2. 让 skill 自动提炼依赖版本 IOC 和供应链投毒 IOC。
+3. 使用 ~/.ioc-scan/projects.yaml 中配置的项目。
+4. 返回命中的项目、文件、IOC、证据和风险状态。
+
+通知：
+又一起供应链投毒，大家请自查：
+恶意域名和URL：t.m-kosche.com https://t.m-kosche.com:443/api/public/otel/v1/traces
+恶意npm生命周期脚本："preinstall" : "bun run index.js"
+恶意GitHub依赖："@antv/setup" : "github:antvis/G2#1916faa365f2788b6e193514872d51a242876569"
+仓库反标记：niagA oG eW ereH :duluH-iahS
 ```
 
 ## 更新
